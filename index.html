@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>For Maya</title>
+
+<!-- Google Fonts: a flowing signature script for the flourish parts,
+     and a legible cursive "handwriting" face for the body of the letter. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Mrs+Saint+Delafield&family=Caveat:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+  /* ============================================================
+     TUNABLE VALUES — change colors, initials, sizing here.
+     ============================================================ */
+  :root{
+    --ink:            #241a10;   /* main body ink, dark iron-gall brown, near black */
+    --ink-soft:       #5c4a35;   /* softer ink for hints / small text */
+    --ink-strong:     #160e07;   /* darkest ink, for headings */
+
+    --parchment-1:    #d3b47a;   /* lightest parchment tone */
+    --parchment-2:    #b6925a;   /* mid parchment tone */
+    --parchment-3:    #96703f;   /* shadowed parchment tone */
+    --parchment-burnt: #1c0f04;  /* scorched, charred edge tone */
+
+    --wax:            #6b2020;   /* main muted oxblood wax */
+    --wax-dark:       #380d0d;   /* deep wax shadow */
+    --wax-light:      #7f2c2c;   /* wax highlight, muted (not glossy) */
+    --wax-glare:      rgba(230,160,150,0.14); /* faint matte sheen */
+
+    --wood-dark:      #241f1a;
+    --wood-mid:       #332c24;
+    --wood-warm:      #453b2f;
+
+    --seal-initials:  "MR";      /* <-- change the embossed initials here */
+    --font-script:    'Mrs Saint Delafield', cursive;  /* flourish: signature, drop cap */
+    --font-body:      'Caveat', cursive;               /* handwritten body text */
+  }
+
+  *{ box-sizing: border-box; }
+
+  html, body{
+    margin:0;
+    padding:0;
+    min-height:100%;
+    background-color: var(--wood-dark);
+    /* stops iOS Safari from treating quick successive taps (this page
+       needs several in a row on the seal) as a double-tap-to-zoom
+       gesture, and removes the old ~300ms tap delay */
+    touch-action: manipulation;
+  }
+
+  body{
+    font-family: var(--font-body);
+    color: var(--ink);
+    /* dark desk/stone backdrop: layered gradients fake worn wood + soft light pool */
+    background:
+      radial-gradient(ellipse at 50% 18%, rgba(255,224,180,0.06), transparent 55%),
+      repeating-linear-gradient(100deg, rgba(0,0,0,0.12) 0px, rgba(0,0,0,0.12) 2px, transparent 2px, transparent 60px),
+      radial-gradient(ellipse at 50% -10%, var(--wood-warm), var(--wood-mid) 55%, var(--wood-dark) 100%);
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    overflow-x:hidden;
+    position:relative;
+  }
+
+  /* faint candle-flicker vignette, only once the letter is open */
+  body.opened::before{
+    content:"";
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+    z-index:0;
+    background: radial-gradient(ellipse at 50% 30%, rgba(255,200,120,0.05), transparent 60%);
+    animation: flicker 6s ease-in-out infinite;
+  }
+  @keyframes flicker{
+    0%,100%{ opacity:0.6; }
+    35%{ opacity:1; }
+    45%{ opacity:0.75; }
+    60%{ opacity:0.95; }
+    80%{ opacity:0.65; }
+  }
+
+  /* ============================================================
+     SHARED "PARCHMENT" TEXTURE — used by both the folded cover
+     and the fully opened letter, so they feel like the same paper.
+     Heavier mottling + crease lines + a scorched rim, then clipped
+     to a torn/deckled silhouette by .torn-edge below.
+     ============================================================ */
+  .parchment-texture{
+    background:
+      /* stains */
+      radial-gradient(circle at 14% 20%, rgba(90,55,20,0.24) 0%, transparent 10%),
+      radial-gradient(circle at 86% 78%, rgba(90,55,20,0.22) 0%, transparent 12%),
+      radial-gradient(circle at 78% 18%, rgba(70,40,10,0.16) 0%, transparent 8%),
+      radial-gradient(circle at 30% 88%, rgba(70,40,10,0.14) 0%, transparent 9%),
+      /* crumple creases: soft, wide ridge/shadow bands at varied angles
+         and positions so the sheet reads as gently wrinkled rather than
+         scratched */
+      linear-gradient(112deg, transparent 34%, rgba(255,244,220,0.07) 42%, rgba(35,18,6,0.09) 50%, transparent 60%) 4% 6% / 66% 54%,
+      linear-gradient(25deg, transparent 36%, rgba(35,18,6,0.08) 47%, transparent 60%) 50% 2% / 58% 62%,
+      linear-gradient(150deg, transparent 34%, rgba(255,244,220,0.06) 43%, rgba(35,18,6,0.08) 51%, transparent 62%) 10% 52% / 62% 58%,
+      linear-gradient(70deg, transparent 36%, rgba(35,18,6,0.07) 47%, transparent 60%) 56% 46% / 52% 64%,
+      linear-gradient(163deg, transparent 35%, rgba(255,244,220,0.05) 44%, rgba(35,18,6,0.07) 52%, transparent 64%) 26% 74% / 66% 46%,
+      /* mottling */
+      radial-gradient(ellipse at 32% 68%, rgba(255,244,220,0.18), transparent 55%),
+      radial-gradient(ellipse at 68% 28%, rgba(255,244,220,0.14), transparent 50%),
+      /* scorched, charred corners and rim */
+      radial-gradient(ellipse 48% 32% at 0% 0%, rgba(18,9,3,0.88), transparent 55%),
+      radial-gradient(ellipse 48% 32% at 100% 0%, rgba(18,9,3,0.82), transparent 55%),
+      radial-gradient(ellipse 48% 32% at 0% 100%, rgba(18,9,3,0.88), transparent 55%),
+      radial-gradient(ellipse 48% 32% at 100% 100%, rgba(18,9,3,0.85), transparent 55%),
+      /* stray char blotches along the edges, not just the corners */
+      radial-gradient(ellipse 22% 12% at 46% 1%, rgba(14,7,2,0.6), transparent 70%),
+      radial-gradient(ellipse 22% 12% at 58% 99%, rgba(14,7,2,0.55), transparent 70%),
+      radial-gradient(ellipse 12% 20% at 1% 60%, rgba(14,7,2,0.55), transparent 70%),
+      radial-gradient(ellipse 12% 20% at 99% 38%, rgba(14,7,2,0.55), transparent 70%),
+      radial-gradient(ellipse at 50% 50%, transparent 58%, rgba(22,11,4,0.7) 100%),
+      /* base tone */
+      linear-gradient(160deg, var(--parchment-1), var(--parchment-2) 55%, var(--parchment-3) 100%);
+    box-shadow:
+      inset 0 0 55px rgba(35,18,6,0.45),
+      inset 0 0 8px rgba(20,10,3,0.6);
+    filter: drop-shadow(14px 26px 30px rgba(0,0,0,0.6));
+  }
+
+  /* faint fibrous grain overlay, layered on top via pseudo-element so it
+     doesn't fight with the stains above */
+  .parchment-texture::after{
+    content:"";
+    position:absolute;
+    inset:0;
+    pointer-events:none;
+    background:
+      repeating-linear-gradient(3deg, rgba(70,45,15,0.07) 0px, transparent 1px, transparent 3px),
+      repeating-linear-gradient(93deg, rgba(70,45,15,0.06) 0px, transparent 1px, transparent 4px);
+    mix-blend-mode: multiply;
+  }
+
+  /* torn / deckled silhouette — an irregular, hand-torn paper edge.
+     Shared by the folded cover and the open letter; percentages scale
+     to each element's own size. */
+  .torn-edge{
+    clip-path: polygon(
+      2% 4%, 7% 0.5%, 12% 3.5%, 16% 0%, 23% 2.5%, 29% 0.5%, 34% 4%, 41% 0%,
+      47% 2%, 55% 0.5%, 61% 3.5%, 68% 0%, 75% 2.5%, 83% 0.5%, 90% 3%, 96% 0.5%, 99% 2%,
+      100% 6%, 97% 12.5%, 100% 19%, 96% 26.5%, 100% 33%, 97% 41%, 100% 48%,
+      96% 55.5%, 100% 62%, 97% 70%, 100% 77%, 96% 85%, 100% 92%, 98% 97%,
+      92% 100%, 86% 97%, 79% 100%, 72% 97.5%, 65% 100%, 58% 96.5%,
+      51% 100%, 44% 97.5%, 37% 100%, 30% 96.5%, 23% 100%, 16% 97.5%,
+      9% 100%, 3% 96.5%, 0.5% 91%,
+      3% 84%, 0% 77%, 3% 70%, 0% 63%, 3% 56%, 0% 49%, 3% 42%,
+      0% 35%, 3% 28%, 0% 21%, 3% 14%, 0% 7%
+    );
+  }
+
+  /* ============================================================
+     STAGE 1 — folded letter with wax seal
+     ============================================================ */
+  .stage{
+    position:relative;
+    z-index:1;
+    flex:1;
+    width:100%;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    padding: clamp(24px, 6vw, 60px) 20px;
+    min-height:100vh;
+    transition: opacity 0.45s ease, transform 0.45s ease;
+  }
+  .stage.closing{
+    opacity:0;
+    transform: scale(0.92);
+    pointer-events:none;
+  }
+
+  .letter-folded{
+    position:relative;
+    width: clamp(220px, 42vw, 320px);
+    height: clamp(300px, 55vw, 420px);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    transform: rotate(-5deg);
+    /* lets the "hard to get" dodges (see <script>) glide with a little
+       spring/overshoot instead of teleporting */
+    transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  /* the original quiet "break the seal" hint fades out once the
+     teasing sequence starts, so it doesn't sit alone in the middle
+     of the screen while the letter is off in a corner */
+  .stage.teasing .hint{
+    opacity:0;
+    transition: opacity 0.3s ease;
+  }
+
+  /* a little aside in the letter's own hand, following it around
+     during the "hard to get" sequence — same quiet hint styling,
+     not a UI tooltip or chat bubble */
+  .tease-dialogue{
+    position: fixed;
+    z-index: 5;
+    font-family: var(--font-body);
+    font-size: 1.05rem;
+    letter-spacing: 0.5px;
+    color: rgba(230, 210, 180, 0.85);
+    text-align:center;
+    max-width: min(80vw, 260px);
+    pointer-events:none;
+    opacity:0;
+    transform: translateX(-50%) translateY(4px);
+    transition: opacity 0.35s ease, transform 0.35s ease;
+  }
+  .tease-dialogue.visible{
+    opacity:1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  /* central fold crease */
+  .letter-folded::before{
+    content:"";
+    position:absolute;
+    top:8%;
+    bottom:8%;
+    left:50%;
+    width:1px;
+    transform:translateX(-50%);
+    background: linear-gradient(to bottom, transparent, rgba(45,25,8,0.4) 15%, rgba(45,25,8,0.5) 50%, rgba(45,25,8,0.4) 85%, transparent);
+    box-shadow: 0 0 6px rgba(45,25,8,0.2);
+    z-index:1;
+  }
+
+  /* ---- wax seal, heart-shaped, small and matte ---- */
+  .seal{
+    all: unset;
+    cursor: pointer;
+    position: relative;
+    width: clamp(64px, 14vw, 84px);
+    height: clamp(64px, 14vw, 84px);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    z-index: 2;
+    -webkit-tap-highlight-color: transparent;
+    /* iPhone: register every tap immediately as a click, with no
+       double-tap-zoom or long-press callout getting in the way */
+    touch-action: manipulation;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+    /* keep the tap target comfortably large even though the wax looks small */
+    padding: 20px;
+    margin: -20px;
+  }
+  .seal:focus-visible .heart-seal{
+    outline: 2px solid rgba(255,224,180,0.7);
+    outline-offset: 6px;
+    border-radius: 50%;
+  }
+
+  .heart-seal{
+    position:relative;
+    width: clamp(56px, 11vw, 72px);
+    height: clamp(56px, 11vw, 72px);
+    transition: transform 0.25s ease;
+  }
+  .seal:hover .heart-seal{ transform: scale(1.05); }
+
+  .heart-seal .lobe,
+  .heart-seal .point{
+    position:absolute;
+    background:
+      radial-gradient(circle at 30% 28%, var(--wax-glare) 0%, transparent 45%),
+      radial-gradient(circle at 60% 65%, var(--wax-dark) 0%, transparent 65%),
+      radial-gradient(circle at 42% 40%, var(--wax-light) 0%, var(--wax) 55%, var(--wax-dark) 100%);
+    box-shadow:
+      inset 0 2px 3px rgba(255,190,180,0.2),
+      inset 0 -5px 8px rgba(0,0,0,0.5);
+  }
+  .heart-seal .lobe{
+    border-radius: 50% 50% 46% 54% / 55% 55% 45% 45%;
+  }
+  .heart-seal .lobe.l{ width:58%; height:54%; top:0%; left:-3%; }
+  .heart-seal .lobe.r{ width:52%; height:59%; top:2%; left:47%; }
+  .heart-seal .point{
+    left:15%;
+    top:18%;
+    width:70%;
+    height:65%;
+    transform: rotate(43deg);
+    border-radius: 8% 42% 42% 42%;
+  }
+  .heart-seal .seal-mark{
+    position:absolute;
+    left:50%;
+    top:56%;
+    transform: translate(-50%,-50%);
+    z-index:1;
+    font-family: var(--font-script);
+    font-size: 1.15rem;
+    color: var(--wax-dark);
+    line-height:1;
+    text-shadow:
+      0 1px 0 rgba(255,190,180,0.3),
+      0 -1px 1px rgba(0,0,0,0.5);
+    user-select:none;
+    pointer-events:none;
+  }
+
+  .seal.cracking .heart-seal{
+    animation: crackPulse 0.6s cubic-bezier(.4,0,.2,1) forwards;
+  }
+  @keyframes crackPulse{
+    0%{ transform: scale(1) rotate(0deg); opacity:1; }
+    22%{ transform: scale(1.14) rotate(-5deg); opacity:1; }
+    100%{ transform: scale(0.1) rotate(14deg); opacity:0; }
+  }
+
+  .hint{
+    margin-top: clamp(18px, 4vw, 28px);
+    font-family: var(--font-body);
+    font-size: 1.15rem;
+    letter-spacing: 0.5px;
+    color: rgba(230, 210, 180, 0.6);
+    transition: opacity 0.3s ease;
+  }
+  .seal:hover ~ .hint{ color: rgba(230, 210, 180, 0.85); }
+
+  /* ============================================================
+     STAGE 2 — the unfolded letter
+     ============================================================ */
+  .letter-full{
+    position:relative;
+    z-index:1;
+    width:100%;
+    display:flex;
+    justify-content:center;
+    padding: clamp(28px, 6vw, 70px) 16px 80px;
+    opacity:0;
+    transform: scale(0.88);
+    transform-origin: top center;
+    transition: transform 0.5s ease-out, opacity 0.5s ease-out;
+  }
+  .letter-full.open{
+    opacity:1;
+    transform: scale(1) rotate(-4deg);
+  }
+  .letter-full[hidden]{ display:none; }
+
+  .parchment{
+    position:relative;
+    width:100%;
+    max-width: 620px;
+    padding: clamp(36px, 8vw, 68px) clamp(28px, 7vw, 60px);
+    perspective: 1700px;
+  }
+
+  /* the two folded panels that cover the top and bottom of the letter
+     until it is opened; they swing away on 3D hinges to reveal the
+     text beneath, like unfolding a real letter taken from its fold.
+     Heights are set in JS once the parchment's real height is known. */
+  .fold-flap{
+    position:absolute;
+    left:0;
+    right:0;
+    z-index:3;
+    background: linear-gradient(160deg, var(--parchment-1), var(--parchment-2) 60%, var(--parchment-3) 100%);
+    backface-visibility: hidden;
+    pointer-events: none;
+    transition: transform 0.8s cubic-bezier(0.33,0.85,0.3,1);
+  }
+  .fold-flap.top{
+    top:0;
+    transform-origin: bottom center;
+    box-shadow: inset 0 -14px 18px -8px rgba(28,14,4,0.4);
+  }
+  .fold-flap.bottom{
+    bottom:0;
+    transform-origin: top center;
+    box-shadow: inset 0 14px 18px -8px rgba(28,14,4,0.4);
+  }
+  .parchment.unfolding .fold-flap.top{
+    transform: rotateX(-112deg);
+  }
+  .parchment.unfolding .fold-flap.bottom{
+    transform: rotateX(112deg);
+    transition-delay: 0.18s;
+  }
+
+  .letter-text p{
+    font-family: var(--font-body);
+    font-size: clamp(1.25rem, 2.9vw, 1.5rem);
+    font-weight: 500;
+    line-height: 1.65;
+    margin: 0 0 1.1em;
+    color: var(--ink);
+    text-align: left;
+  }
+
+  .letter-text p.salutation{
+    font-size: clamp(1.35rem, 3.2vw, 1.65rem);
+    margin-bottom: 1.4em;
+  }
+
+  /* drop cap on the very first letter of the letter */
+  .letter-text p.salutation::first-letter{
+    font-family: var(--font-script);
+    font-size: 3.4em;
+    font-weight:400;
+    float:left;
+    line-height: 0.7;
+    padding: 0.1em 0.1em 0 0;
+    color: var(--ink-strong);
+    transform: rotate(-4deg);
+    display:inline-block;
+  }
+
+  .signature{
+    margin-top: 1.8em;
+    text-align:right;
+    font-style:normal;
+  }
+  .signature .valediction{
+    display:block;
+    font-family: var(--font-body);
+    font-weight:500;
+    font-size: clamp(1.25rem, 2.9vw, 1.5rem);
+    color: var(--ink);
+    margin-bottom: 0.05em;
+  }
+  .signature .name{
+    display:block;
+    font-family: var(--font-script);
+    font-size: clamp(2.4rem, 7vw, 3.2rem);
+    color: var(--ink-strong);
+    letter-spacing: 1px;
+  }
+
+  /* the broken wax seal, resting where it was pressed, near the close
+     of the letter — a quiet echo of the seal that was cracked to open it */
+  .seal-rest{
+    margin-top: 34px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .seal-rest .heart-seal{
+    width: 40px;
+    height: 40px;
+    transform: rotate(-8deg);
+    opacity:0.92;
+  }
+  .seal-rest .heart-seal::before{
+    /* hairline crack across the resting wax */
+    content:"";
+    position:absolute;
+    left:18%;
+    top:8%;
+    width:2px;
+    height:86%;
+    background: rgba(20,8,4,0.55);
+    transform: rotate(18deg);
+    z-index:2;
+    border-radius:2px;
+  }
+
+  @media (max-width: 480px){
+    .letter-folded::before{ opacity:0.75; }
+  }
+</style>
+</head>
+<body>
+
+  <!-- STAGE 1: folded letter, sealed with wax -->
+  <div class="stage" id="stage">
+    <div class="letter-folded parchment-texture torn-edge">
+      <button class="seal" id="seal" aria-label="Break the wax seal to open the letter">
+        <span class="heart-seal" aria-hidden="true">
+          <span class="lobe l"></span>
+          <span class="lobe r"></span>
+          <span class="point"></span>
+          <span class="seal-mark">MR</span>
+        </span>
+      </button>
+    </div>
+    <p class="hint">break the seal</p>
+  </div>
+
+  <!-- follows the letter around during the "hard to get" sequence -->
+  <p class="tease-dialogue" id="teaseDialogue" aria-live="polite"></p>
+
+  <!-- STAGE 2: the opened letter -->
+  <div class="letter-full" id="fullLetter" hidden>
+    <div class="parchment parchment-texture torn-edge">
+      <div class="fold-flap top" aria-hidden="true"></div>
+      <div class="fold-flap bottom" aria-hidden="true"></div>
+      <div class="letter-text">
+        <p class="salutation">My dearest Maya,</p>
+
+        <p>I take up quill and parchment tonight because the miles betwixt Hong Kong and Glasgow are wide, and a letter is the one thing I can send that needs no signal to arrive.</p>
+
+        <p>Three months. 'Tis a small siege, as sieges go, and we have trained for harder things than distance. Thy knee gave thee ample reason to stop training altogether, and still thou returned to the mats again and again, for the love of the art runs deeper in thee than any injury could reach. Few would call that wise. It is, plainly, thee.</p>
+
+        <p>Let it be known, sealed and witnessed: I shall not touch a drop of wine nor ale till thy feet touch ground on the seventeenth of December, if thou wilt hold likewise to no smoke between now and then. A pinky promise, sworn in wax, small vow, kept fully, same as any good structure: it is not the size of the beam that matters, but that it bears the load it was sworn to bear. And I look forward to being back on the mats with thee, doing our bit, "two two's my word crodie," as we have always done.</p>
+
+        <p>I confess I think often of the day thou dost land, of finding some corner of a night market or a proper trattoria and ordering too much: food bordering on gluttony, ice cream beyond sense. We shall keep our promise of trying proper Italian fare and Nepali fare besides, and, because we agreed and I intend to hold thee to it, pistachio and taro for dessert, both.</p>
+
+        <p>Until then: train hard, mind thy base, keep thy structure sound in all things, on the mats and off.</p>
+
+        <div class="signature">
+          <span class="valediction">Thine own,</span>
+          <span class="name">Peans</span>
+        </div>
+
+        <div class="seal-rest" aria-hidden="true">
+          <span class="heart-seal">
+            <span class="lobe l"></span>
+            <span class="lobe r"></span>
+            <span class="point"></span>
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Breaking the seal: crack animation on the seal, then the folded
+    // letter fades away, the flat (still folded-shut) letter appears,
+    // and finally its top and bottom folds swing open on 3D hinges to
+    // reveal the text — an actual unfolding, not just a fade-in.
+    (function(){
+      var seal = document.getElementById('seal');
+      var stage = document.getElementById('stage');
+      var fullLetter = document.getElementById('fullLetter');
+      var parchment = fullLetter.querySelector('.parchment');
+      var topFlap = fullLetter.querySelector('.fold-flap.top');
+      var bottomFlap = fullLetter.querySelector('.fold-flap.bottom');
+      var letterFolded = document.querySelector('.letter-folded');
+      var teaseDialogue = document.getElementById('teaseDialogue');
+      var opened = false;
+
+      // ============================================================
+      // "Hard to get" intro: the first four presses dodge the seal
+      // instead of opening it. Edit TEASE_STEPS to change the lines,
+      // the corners the letter dodges to, or the little wobble angle
+      // it settles into at each stop.
+      // ============================================================
+      var TEASE_STEPS = [
+        { corner: 'left',         rotate: -9, text: "not that easy" },
+        { corner: 'bottom-right', rotate: 6,  text: "ask nicer" },
+        { corner: 'top-right',    rotate: -7, text: "getting warmer (you're not)" },
+        { corner: 'center',       rotate: -5, text: "fineeeee you can open it" }
+      ];
+      var teaseAttempt = 0;   // how many teasing dodges have played so far
+      var homeRect = null;    // the letter's natural (resting) on-screen box
+      var dialogueTimer = null;
+
+      function getHomeRect(){
+        if (!homeRect){
+          var r = letterFolded.getBoundingClientRect();
+          homeRect = { left: r.left, top: r.top, width: r.width, height: r.height };
+        }
+        return homeRect;
+      }
+
+      // window.innerWidth/innerHeight are unreliable on iOS Safari, where
+      // they shift as the address bar collapses/expands mid-interaction;
+      // window.visualViewport tracks the actually-visible area and is
+      // the correct source for "will this fit on screen" math on iPhone
+      function viewportSize(){
+        var vv = window.visualViewport;
+        return vv
+          ? { w: vv.width, h: vv.height }
+          : { w: window.innerWidth, h: window.innerHeight };
+      }
+
+      // clamps a position within [pad, viewport-size-pad]; if the letter
+      // is actually bigger than the viewport on that axis (a very short
+      // landscape phone, say), there's no padding that fits both sides —
+      // center it instead, so any overflow is at least even on both
+      // edges rather than all shoved off one side
+      function clampAxis(pos, size, viewport, pad){
+        var maxPos = viewport - size - pad;
+        if (maxPos < pad) return (viewport - size) / 2;
+        return Math.max(pad, Math.min(maxPos, pos));
+      }
+
+      // works out an on-screen target for the given corner, clamped so
+      // the letter always stays fully visible with some breathing room
+      function computeTarget(corner){
+        var home = getHomeRect();
+        var vp = viewportSize();
+        var vw = vp.w;
+        var vh = vp.h;
+        var pad = Math.max(16, Math.min(40, vw * 0.04));
+        var w = home.width, h = home.height;
+        var left, top;
+
+        if (corner === 'left'){
+          left = pad;
+          top = (vh - h) / 2;
+        } else if (corner === 'bottom-right'){
+          left = vw - w - pad;
+          top = vh - h - pad;
+        } else if (corner === 'top-right'){
+          left = vw - w - pad;
+          top = pad;
+        } else { // 'center' — back to its natural resting spot
+          left = home.left;
+          top = home.top;
+        }
+
+        // defensive clamp: never let the letter leave the viewport,
+        // on any screen size
+        left = clampAxis(left, w, vw, pad);
+        top = clampAxis(top, h, vh, pad);
+
+        return { left: left, top: top, width: w, height: h, home: home };
+      }
+
+      function moveLetterTo(target, rotateDeg){
+        var dx = target.left - target.home.left;
+        var dy = target.top - target.home.top;
+        letterFolded.style.transform =
+          'translate(' + dx + 'px, ' + dy + 'px) rotate(' + rotateDeg + 'deg)';
+      }
+
+      // places the dialogue just below the letter's new spot, or above
+      // it if there isn't room below (e.g. when tucked into a bottom
+      // corner), and centers it horizontally on the letter
+      function showDialogue(target, text){
+        clearTimeout(dialogueTimer);
+
+        var vp = viewportSize();
+        var vw = vp.w;
+        var vh = vp.h;
+        var gap = 14;
+        var estimatedHeight = 60;
+
+        var centerX = target.left + target.width / 2;
+        centerX = Math.max(100, Math.min(vw - 100, centerX));
+
+        var spaceBelow = vh - (target.top + target.height);
+        var top = (spaceBelow > estimatedHeight + gap)
+          ? target.top + target.height + gap
+          : Math.max(gap, target.top - estimatedHeight - gap);
+
+        teaseDialogue.style.left = centerX + 'px';
+        teaseDialogue.style.top = top + 'px';
+        teaseDialogue.textContent = text;
+
+        // retrigger the fade-in even if a previous line is still showing
+        teaseDialogue.classList.remove('visible');
+        void teaseDialogue.offsetWidth;
+        teaseDialogue.classList.add('visible');
+
+        dialogueTimer = setTimeout(function(){
+          teaseDialogue.classList.remove('visible');
+        }, 2000);
+      }
+
+      function teaseStep(){
+        var step = TEASE_STEPS[teaseAttempt];
+        teaseAttempt++;
+        stage.classList.add('teasing');
+        var target = computeTarget(step.corner);
+        moveLetterTo(target, step.rotate);
+        showDialogue(target, step.text);
+      }
+
+      function openLetter(){
+        if (opened) return;
+        opened = true;
+        seal.style.pointerEvents = 'none';
+        seal.classList.add('cracking');
+
+        setTimeout(function(){
+          stage.classList.add('closing');
+
+          setTimeout(function(){
+            stage.setAttribute('hidden', '');
+            fullLetter.hidden = false;
+            // force reflow so the transition below actually animates
+            void fullLetter.offsetWidth;
+
+            // size the folded panels to the letter's real height now
+            // that it's laid out, so they fully cover the text while closed
+            var totalHeight = parchment.offsetHeight;
+            var flapHeight = Math.round(totalHeight * 0.34);
+            topFlap.style.height = flapHeight + 'px';
+            bottomFlap.style.height = flapHeight + 'px';
+
+            fullLetter.classList.add('open');
+            document.body.classList.add('opened');
+            fullLetter.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+            // let the closed, resting letter register for a beat, then
+            // swing the folds open to reveal the text beneath
+            setTimeout(function(){
+              parchment.classList.add('unfolding');
+            }, 480);
+          }, 420);
+        }, 600);
+      }
+
+      // the first four presses (mouse, touch, or keyboard Enter/Space —
+      // native <button> behavior fires 'click' for all three) dodge and
+      // tease instead of opening; only the fifth press falls through to
+      // the original open sequence, unchanged
+      seal.addEventListener('click', function(){
+        if (teaseAttempt < TEASE_STEPS.length){
+          teaseStep();
+          return;
+        }
+        openLetter();
+      });
+    })();
+  </script>
+
+</body>
+</html>
