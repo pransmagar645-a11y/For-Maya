@@ -499,9 +499,10 @@
 
   <!-- music: the first 38s of the song, with a fade-out from 34s baked
        into the file itself (so it eases out on iPhone too, which ignores
-       volume changes from a page). Sits next to this page; swap the src
-       to change the song. -->
-  <audio id="letterAudio" preload="auto" src="oh-my-angel.m4a"></audio>
+       volume changes from a page). Sits next to this page. If you swap
+       in a new clip, give it a NEW filename — phones cache audio by
+       name and will keep playing the old one otherwise. -->
+  <audio id="letterAudio" preload="auto" src="oh-my-angel-38s.m4a"></audio>
 
   <!-- STAGE 2: the opened letter -->
   <div class="letter-full" id="fullLetter" hidden>
