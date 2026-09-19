@@ -497,8 +497,10 @@
   <!-- follows the letter around during the "hard to get" sequence -->
   <p class="tease-dialogue" id="teaseDialogue" aria-live="polite"></p>
 
-  <!-- music that plays once the seal is broken (first 40s of the song);
-       the file sits next to this page. Swap the src to change the song. -->
+  <!-- music: the first 28s of the song, with a fade-out from 24s baked
+       into the file itself (so it eases out on iPhone too, which ignores
+       volume changes from a page). Sits next to this page; swap the src
+       to change the song. -->
   <audio id="letterAudio" preload="auto" src="oh-my-angel.m4a"></audio>
 
   <!-- STAGE 2: the opened letter -->
@@ -553,34 +555,28 @@
       var opened = false;
 
       // ============================================================
-      // Music: starts the moment the seal breaks and plays for the
-      // first AUDIO_STOP_AT seconds, easing out over the last few.
-      // (iPhone Safari ignores volume changes, so there it simply
-      // ends at 40s — the clip itself is cut to that length.)
+      // Music: tries to start the instant the page loads. Browsers
+      // (all phones, most desktops) refuse sound before the person has
+      // tapped something, so if that's blocked it starts on the very
+      // first tap of the seal instead — the earliest moment allowed.
+      // The clip ends and fades on its own; nothing to stop here.
       // ============================================================
-      var AUDIO_STOP_AT = 40;      // seconds
-      var AUDIO_FADE_SECONDS = 3;  // gentle fade-out before the stop
+      var musicStarted = false;
 
       function startMusic(){
-        if (!letterAudio) return;
+        if (!letterAudio || musicStarted) return;
         try {
-          letterAudio.currentTime = 0;
-          letterAudio.volume = 1;
           var p = letterAudio.play();
-          if (p && p.catch) p.catch(function(){ /* autoplay blocked: stay silent */ });
+          if (p && p.then){
+            p.then(function(){ musicStarted = true; })
+             .catch(function(){ /* blocked until a tap — retried on first tap */ });
+          } else {
+            musicStarted = true;
+          }
         } catch (e) {}
       }
 
-      if (letterAudio){
-        letterAudio.addEventListener('timeupdate', function(){
-          var t = letterAudio.currentTime;
-          if (t >= AUDIO_STOP_AT){
-            letterAudio.pause();
-          } else if (t >= AUDIO_STOP_AT - AUDIO_FADE_SECONDS){
-            letterAudio.volume = Math.max(0, (AUDIO_STOP_AT - t) / AUDIO_FADE_SECONDS);
-          }
-        });
-      }
+      startMusic();
 
       // ============================================================
       // "Hard to get" intro: the first four presses dodge the seal
@@ -716,9 +712,6 @@
         opened = true;
         seal.style.pointerEvents = 'none';
         seal.classList.add('cracking');
-        // must happen inside the tap itself — browsers only allow sound
-        // to start from a user gesture, so this can't wait for a timer
-        startMusic();
 
         setTimeout(function(){
           stage.classList.add('closing');
@@ -754,10 +747,10 @@
       // tease instead of opening; only the fifth press falls through to
       // the original open sequence, unchanged
       seal.addEventListener('click', function(){
-        // phones won't download audio until the person has touched the
-        // page, so use the very first tap to start buffering the song —
-        // by the fifth tap it's ready to play instantly
-        if (teaseAttempt === 0 && letterAudio) letterAudio.load();
+        // if autoplay was blocked on load, this first tap is the earliest
+        // moment the browser will let the music begin (must be called
+        // directly inside the tap, not from a timer)
+        startMusic();
 
         if (teaseAttempt < TEASE_STEPS.length){
           teaseStep();
