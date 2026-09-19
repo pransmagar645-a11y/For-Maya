@@ -555,11 +555,9 @@
       var opened = false;
 
       // ============================================================
-      // Music: tries to start the instant the page loads. Browsers
-      // (all phones, most desktops) refuse sound before the person has
-      // tapped something, so if that's blocked it starts on the very
-      // first tap of the seal instead — the earliest moment allowed.
-      // The clip ends and fades on its own; nothing to stop here.
+      // Music: starts on the first tap of the seal (see the click
+      // handler below) and plays on through the teasing and the
+      // opening. The clip fades out and ends on its own.
       // ============================================================
       var musicStarted = false;
 
@@ -569,14 +567,12 @@
           var p = letterAudio.play();
           if (p && p.then){
             p.then(function(){ musicStarted = true; })
-             .catch(function(){ /* blocked until a tap — retried on first tap */ });
+             .catch(function(){ /* blocked — will retry on the next tap */ });
           } else {
             musicStarted = true;
           }
         } catch (e) {}
       }
-
-      startMusic();
 
       // ============================================================
       // "Hard to get" intro: the first four presses dodge the seal
@@ -747,9 +743,8 @@
       // tease instead of opening; only the fifth press falls through to
       // the original open sequence, unchanged
       seal.addEventListener('click', function(){
-        // if autoplay was blocked on load, this first tap is the earliest
-        // moment the browser will let the music begin (must be called
-        // directly inside the tap, not from a timer)
+        // the music begins on the first tap (must be called directly
+        // inside the tap — browsers only allow sound from a user gesture)
         startMusic();
 
         if (teaseAttempt < TEASE_STEPS.length){
